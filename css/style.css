@@ -66,6 +66,7 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  overflow-x: clip;
 }
 
 body {
@@ -78,7 +79,7 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.3s ease, color 0.3s ease;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 h1, h2, h3, p {
@@ -1446,11 +1447,12 @@ main.container {
   }
 
   .summary-card {
-    padding: 18px;
+    padding: 16px;
   }
 
   .summary-value {
-    font-size: 22px;
+    font-size: clamp(16px, 4.6vw, 22px);
+    white-space: nowrap;
   }
 
   .balance-card .summary-value {
