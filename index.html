@@ -188,7 +188,22 @@
             <h2 id="listTitle">Transactions</h2>
             <p class="card-sub" id="listCount">No transactions yet</p>
           </div>
-          <button type="button" class="btn btn-ghost btn-sm" id="clearFiltersBtn">Reset filters</button>
+          <div class="head-actions">
+            <button type="button" class="btn btn-ghost btn-sm" id="clearFiltersBtn">Reset filters</button>
+            <div class="menu">
+              <button type="button" class="icon-btn icon-btn-sm" id="dataMenuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="dataMenu" aria-label="Export, import and data options" title="Export / Import">
+                <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+              </button>
+              <div class="menu-list hidden" id="dataMenu" role="menu">
+                <button type="button" role="menuitem" data-menu="csv">📄 Export visible as CSV</button>
+                <button type="button" role="menuitem" data-menu="backup">💾 Download backup (JSON)</button>
+                <button type="button" role="menuitem" data-menu="import">📥 Restore from backup…</button>
+                <hr />
+                <button type="button" role="menuitem" data-menu="clear" class="danger">🧹 Clear all data</button>
+              </div>
+              <input type="file" id="importInput" accept=".json,application/json" hidden />
+            </div>
+          </div>
         </div>
 
         <div class="filters">
@@ -275,7 +290,7 @@
   <!-- ============ Delete confirmation modal ============ -->
   <div class="modal-backdrop hidden" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal">
-      <div class="modal-icon" aria-hidden="true">🗑️</div>
+      <div class="modal-icon" id="modalIcon" aria-hidden="true">🗑️</div>
       <h3 id="modalTitle">Delete transaction?</h3>
       <p id="modalText">This action cannot be undone.</p>
       <div class="modal-actions">
@@ -293,6 +308,7 @@
   <script src="js/validation.js"></script>
   <script src="js/charts.js"></script>
   <script src="js/budget.js"></script>
+  <script src="js/data-io.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
