@@ -40,6 +40,26 @@ const Validator = {
     return "";
   },
 
+  /** Normalise free text: trim and collapse repeated whitespace. */
+  cleanText(value) {
+    return String(value || "").replace(/\s+/g, " ").trim();
+  },
+
+  /** Find an existing transaction with identical details (ignoring the one being edited). */
+  findDuplicate(data, transactions, ignoreId = null) {
+    const amount = Math.round(Number(data.amount) * 100) / 100;
+    const desc = this.cleanText(data.description).toLowerCase();
+    return transactions.find(
+      (t) =>
+        t.id !== ignoreId &&
+        t.type === data.type &&
+        t.amount === amount &&
+        t.category === data.category &&
+        t.date === data.date &&
+        t.description.toLowerCase() === desc
+    );
+  },
+
   /** Validate a whole form payload; returns { field: message } for invalid fields only. */
   validate(data) {
     const errors = {

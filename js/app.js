@@ -136,7 +136,7 @@
       amount: els.amount.validity.badInput ? "invalid" : els.amount.value.trim(),
       category: els.category.value,
       date: els.date.value,
-      description: els.description.value.trim(),
+      description: Validator.cleanText(els.description.value),
     };
   }
 
@@ -173,6 +173,13 @@
     });
   }
 
+  /** Non-blocking notice shown under a field (amber, not red). */
+  function setFieldNotice(field, message) {
+    const notice = $(`#${field}Notice`);
+    if (!notice) return;
+    notice.textContent = message;
+  }
+
   function clearFieldError(field) {
     const wrapper = els[field].closest(".field");
     wrapper.classList.remove("invalid");
@@ -192,6 +199,19 @@
       showToast("Please fix the highlighted fields.", "error");
       return;
     }
+
+    // Duplicate guard: the first submit warns, a second identical submit confirms.
+    const duplicate = Validator.findDuplicate(data, state.transactions, state.editingId);
+    const dupKey = duplicate ? JSON.stringify(data) : null;
+    if (duplicate && state.confirmedDuplicate !== dupKey) {
+      state.confirmedDuplicate = dupKey;
+      setFieldNotice("description", `An identical transaction already exists on ${Utils.formatDate(duplicate.date)}. Press the button again to add it anyway.`);
+      highlight(duplicate.id);
+      els.submitBtn.querySelector("span").textContent = "Add Anyway";
+      showToast("Possible duplicate. Submit again to confirm.", "error");
+      return;
+    }
+    state.confirmedDuplicate = null;
 
     // Soft warning (not blocking): an expense larger than the available balance.
     const overspend =
@@ -238,6 +258,8 @@
     setSelectedType(keepType);
     els.date.value = Utils.todayISO();
     updateCharCount();
+    updateAmountHint();
+    setFieldNotice("description", "");
     showErrors({});
 
     els.formCard.classList.remove("editing");
@@ -259,6 +281,7 @@
     els.date.value = tx.date;
     els.description.value = tx.description;
     updateCharCount();
+    updateAmountHint();
     showErrors({});
 
     els.formCard.classList.add("editing");
@@ -269,6 +292,15 @@
 
     els.formCard.scrollIntoView({ behavior: "smooth", block: "start" });
     els.amount.focus({ preventScroll: true });
+  }
+
+  /** Show the typed amount formatted as currency, e.g. "₹1,25,000.00". */
+  function updateAmountHint() {
+    const hint = $("#amountHint");
+    const value = Number(els.amount.value);
+    hint.textContent = els.amount.value && value > 0 && !Validator.amount(els.amount.value)
+      ? `${Utils.formatCurrency(value)}${value >= 100000 ? " · large amount, please double-check" : ""}`
+      : "";
   }
 
   function updateCharCount() {
@@ -569,7 +601,16 @@
 
     ["amount", "category", "date", "description"].forEach((field) => {
       const evt = field === "category" || field === "date" ? "change" : "input";
-      els[field].addEventListener(evt, () => clearFieldError(field));
+      els[field].addEventListener(evt, () => {
+        // Once a field has shown an error, re-check it live so the message
+        // updates or disappears as the user corrects it.
+        if (els[field].closest(".field").classList.contains("invalid")) validateField(field);
+        if (state.confirmedDuplicate) {
+          setFieldNotice("description", "");
+          state.confirmedDuplicate = null;
+          els.submitBtn.querySelector("span").textContent = state.editingId ? "Save Changes" : "Add Transaction";
+        }
+      });
       els[field].addEventListener("blur", () => {
         if (els[field].value !== "") validateField(field);
       });
@@ -580,6 +621,7 @@
       if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault();
     });
     els.description.addEventListener("input", updateCharCount);
+    els.amount.addEventListener("input", updateAmountHint);
 
     els.list.addEventListener("click", (event) => {
       const btn = event.target.closest("[data-action]");
