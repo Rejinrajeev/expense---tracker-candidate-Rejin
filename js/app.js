@@ -117,7 +117,8 @@
   function readForm() {
     return {
       type: getSelectedType(),
-      amount: els.amount.value.trim(),
+      // Number inputs report "" for unparsable text, so flag it explicitly.
+      amount: els.amount.validity.badInput ? "invalid" : els.amount.value.trim(),
       category: els.category.value,
       date: els.date.value,
       description: els.description.value.trim(),
@@ -125,12 +126,25 @@
   }
 
   function validateForm(data) {
-    const errors = {};
-    if (!data.amount || Number(data.amount) <= 0) errors.amount = "Please enter an amount.";
-    if (!data.category) errors.category = "Please choose a category.";
-    if (!data.date) errors.date = "Please pick a date.";
-    if (!data.description) errors.description = "Please add a description.";
-    return errors;
+    return Validator.validate(data);
+  }
+
+  /** Validate a single field once the user leaves it, so errors appear early. */
+  function validateField(field) {
+    const data = readForm();
+    const message =
+      field === "category" ? Validator.category(data.category, data.type) : Validator[field](data[field]);
+    const wrapper = els[field].closest(".field");
+    $(`#${field}Error`).textContent = message;
+    wrapper.classList.toggle("invalid", Boolean(message));
+    els[field].setAttribute("aria-invalid", message ? "true" : "false");
+  }
+
+  function currentBalance(excludeId) {
+    return state.transactions.reduce(
+      (sum, t) => (t.id === excludeId ? sum : sum + (t.type === "income" ? t.amount : -t.amount)),
+      0
+    );
   }
 
   function showErrors(errors) {
@@ -164,6 +178,10 @@
       return;
     }
 
+    // Soft warning (not blocking): an expense larger than the available balance.
+    const overspend =
+      data.type === "expense" && Number(data.amount) > currentBalance(state.editingId) && state.transactions.length > 0;
+
     const transaction = {
       type: data.type,
       amount: Math.round(Number(data.amount) * 100) / 100,
@@ -194,6 +212,7 @@
     resetForm();
     render();
     highlight(changedId);
+    if (overspend) showToast("Heads up: this expense exceeds your available balance.", "error");
   }
 
   function resetForm() {
@@ -487,6 +506,14 @@
     ["amount", "category", "date", "description"].forEach((field) => {
       const evt = field === "category" || field === "date" ? "change" : "input";
       els[field].addEventListener(evt, () => clearFieldError(field));
+      els[field].addEventListener("blur", () => {
+        if (els[field].value !== "") validateField(field);
+      });
+    });
+
+    // Block characters like "e", "+" and "-" that number inputs otherwise allow.
+    els.amount.addEventListener("keydown", (event) => {
+      if (["e", "E", "+", "-"].includes(event.key)) event.preventDefault();
     });
     els.description.addEventListener("input", updateCharCount);
 
@@ -541,6 +568,8 @@
     });
     populateCategorySelect(getSelectedType());
     els.date.value = Utils.todayISO();
+    els.date.max = Utils.todayISO();
+    els.date.min = Validator.MIN_DATE;
     bindEvents();
     renderCategoryFilter();
     render();
