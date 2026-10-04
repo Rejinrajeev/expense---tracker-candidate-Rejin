@@ -11,6 +11,7 @@
     editingId: null,
     pendingDeleteId: null,
     filters: { type: "all", category: "all", month: "all", search: "" },
+    sort: "date-desc",
   };
 
   /* ---------- DOM references ---------- */
@@ -81,6 +82,20 @@
       if (a.date !== b.date) return a.date < b.date ? 1 : -1;
       return (b.createdAt || 0) - (a.createdAt || 0);
     });
+  }
+
+  function sortTransactions(list, mode) {
+    const byDate = sortByDateDesc(list);
+    switch (mode) {
+      case "date-asc":
+        return byDate.reverse();
+      case "amount-desc":
+        return byDate.sort((a, b) => b.amount - a.amount);
+      case "amount-asc":
+        return byDate.sort((a, b) => a.amount - b.amount);
+      default:
+        return byDate;
+    }
   }
 
   /* ---------- Theme ---------- */
@@ -292,7 +307,7 @@
   function getVisibleTransactions() {
     const { type, category, month, search } = state.filters;
     const query = search.toLowerCase();
-    return sortByDateDesc(
+    return sortTransactions(
       state.transactions.filter(
         (t) =>
           (type === "all" || t.type === type) &&
@@ -301,7 +316,8 @@
           (!query ||
             t.description.toLowerCase().includes(query) ||
             t.category.toLowerCase().includes(query))
-      )
+      ),
+      state.sort
     );
   }
 
@@ -438,9 +454,11 @@
     } else {
       els.emptyState.classList.add("hidden");
       let html = "";
+      // Date headings only make sense while the list is ordered by date.
+      const groupByDate = state.sort.startsWith("date");
       let lastDate = null;
       visible.forEach((t) => {
-        if (t.date !== lastDate) {
+        if (groupByDate && t.date !== lastDate) {
           html += `<li class="date-group">${Utils.friendlyDate(t.date)}</li>`;
           lastDate = t.date;
         }
@@ -558,6 +576,10 @@
       renderList();
     });
     els.clearFiltersBtn.addEventListener("click", resetFilters);
+    $("#sortSelect").addEventListener("change", (event) => {
+      state.sort = event.target.value;
+      renderList();
+    });
 
     els.modalCancel.addEventListener("click", closeModal);
     els.modalConfirm.addEventListener("click", confirmDelete);

@@ -160,10 +160,20 @@
         </div>
 
         <div class="filters">
-          <div class="chip-group" role="tablist" aria-label="Filter by type">
-            <button type="button" class="chip active" data-type="all" role="tab" aria-selected="true">All</button>
-            <button type="button" class="chip" data-type="income" role="tab" aria-selected="false">Income</button>
-            <button type="button" class="chip" data-type="expense" role="tab" aria-selected="false">Expense</button>
+          <div class="filter-top">
+            <div class="chip-group" role="tablist" aria-label="Filter by type">
+              <button type="button" class="chip active" data-type="all" role="tab" aria-selected="true">All</button>
+              <button type="button" class="chip" data-type="income" role="tab" aria-selected="false">Income</button>
+              <button type="button" class="chip" data-type="expense" role="tab" aria-selected="false">Expense</button>
+            </div>
+            <div class="input-wrap select-wrap sort-wrap">
+              <select id="sortSelect" aria-label="Sort transactions">
+                <option value="date-desc">Newest first</option>
+                <option value="date-asc">Oldest first</option>
+                <option value="amount-desc">Highest amount</option>
+                <option value="amount-asc">Lowest amount</option>
+              </select>
+            </div>
           </div>
 
           <div class="filter-row">

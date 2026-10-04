@@ -707,6 +707,23 @@ main.container {
   margin-bottom: 18px;
 }
 
+.filter-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sort-wrap {
+  width: 170px;
+}
+
+.sort-wrap select {
+  height: 42px;
+  font-size: 13.5px;
+}
+
 .chip-group {
   display: inline-flex;
   align-self: flex-start;
@@ -1471,6 +1488,11 @@ main.container {
 
   .chip-group {
     align-self: stretch;
+    flex: 1 1 100%;
+  }
+
+  .sort-wrap {
+    width: 100%;
   }
 
   .chip {
