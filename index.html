@@ -76,6 +76,36 @@
       </article>
     </section>
 
+    <!-- ============ Monthly budget ============ -->
+    <section class="budget-card" id="budgetCard" data-status="none" aria-labelledby="budgetTitle">
+      <div class="budget-view">
+        <div class="budget-head">
+          <span class="budget-icon" aria-hidden="true">🎯</span>
+          <div>
+            <h2 id="budgetTitle">Monthly Budget · <span id="budgetMonth"></span></h2>
+            <p class="budget-summary" id="budgetSummary"></p>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" id="budgetEditBtn">Set budget</button>
+        </div>
+        <div class="budget-track" role="presentation"><div class="budget-bar" id="budgetBar"></div></div>
+        <p class="budget-details" id="budgetDetails"></p>
+      </div>
+
+      <form class="budget-form" id="budgetForm" novalidate>
+        <label for="budgetInput">Spending limit for this month</label>
+        <div class="budget-form-row">
+          <div class="input-wrap with-prefix budget-input">
+            <span class="prefix" aria-hidden="true">₹</span>
+            <input type="number" id="budgetInput" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 25000" aria-describedby="budgetError" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="budgetCancelBtn">Cancel</button>
+          <button type="button" class="btn btn-ghost btn-sm budget-remove" id="budgetRemoveBtn">Remove</button>
+        </div>
+        <p class="error-msg" id="budgetError" role="alert"></p>
+      </form>
+    </section>
+
     <div class="layout">
       <!-- ============ Transaction form ============ -->
       <section class="card form-card" aria-labelledby="formTitle">
@@ -262,6 +292,7 @@
   <script src="js/storage.js"></script>
   <script src="js/validation.js"></script>
   <script src="js/charts.js"></script>
+  <script src="js/budget.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

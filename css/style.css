@@ -376,6 +376,144 @@ main.container {
   color: var(--expense);
 }
 
+/* ---------- Monthly budget ---------- */
+.budget-card {
+  --budget-color: var(--primary);
+  margin-bottom: 24px;
+  padding: 18px 24px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  animation: rise 0.6s var(--ease) 0.15s both;
+}
+
+.budget-card[data-status="ok"] { --budget-color: var(--income); }
+.budget-card[data-status="warn"] { --budget-color: var(--warning); }
+.budget-card[data-status="over"] { --budget-color: var(--expense); }
+
+.budget-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.budget-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  font-size: 20px;
+  background: color-mix(in srgb, var(--budget-color) 14%, transparent);
+}
+
+.budget-head h2 {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.budget-summary {
+  margin-top: 2px;
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+
+.budget-summary strong {
+  color: var(--text);
+}
+
+.budget-pct {
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--budget-color);
+  background: color-mix(in srgb, var(--budget-color) 14%, transparent);
+}
+
+.budget-track {
+  height: 10px;
+  margin-top: 14px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.budget-bar {
+  height: 100%;
+  width: 0;
+  border-radius: 10px;
+  background: var(--budget-color);
+  transition: width 0.8s var(--ease), background-color 0.3s;
+}
+
+.budget-card[data-status="none"] .budget-track {
+  display: none;
+}
+
+.budget-details {
+  margin-top: 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.budget-card[data-status="over"] .budget-details {
+  color: var(--expense);
+}
+
+.budget-form {
+  display: none;
+}
+
+.budget-card.editing .budget-view {
+  display: none;
+}
+
+.budget-card.editing .budget-form {
+  display: block;
+}
+
+.budget-form label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.budget-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.budget-input {
+  flex: 1 1 200px;
+}
+
+.budget-input input {
+  height: 42px;
+  font-size: 15px;
+}
+
+.budget-input.invalid input {
+  border-color: var(--expense);
+  background: var(--expense-soft);
+}
+
+.budget-form .btn-sm {
+  height: 42px;
+}
+
+.budget-card[data-status="none"] .budget-remove {
+  display: none;
+}
+
 /* ---------- Cards ---------- */
 .layout {
   display: grid;
@@ -1531,6 +1669,18 @@ main.container {
   .field-row {
     grid-template-columns: 1fr;
     gap: 0;
+  }
+
+  .budget-card {
+    padding: 16px 18px;
+  }
+
+  .budget-head {
+    grid-template-columns: auto 1fr;
+  }
+
+  .budget-head .btn {
+    grid-column: 1 / -1;
   }
 
   .chip-group {
