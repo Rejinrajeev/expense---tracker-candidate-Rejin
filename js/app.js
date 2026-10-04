@@ -117,7 +117,8 @@
   function readForm() {
     return {
       type: getSelectedType(),
-      amount: els.amount.value.trim(),
+      // Number inputs report "" for unparsable text, so flag it explicitly.
+      amount: els.amount.validity.badInput ? "invalid" : els.amount.value.trim(),
       category: els.category.value,
       date: els.date.value,
       description: els.description.value.trim(),
