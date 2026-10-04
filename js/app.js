@@ -356,6 +356,7 @@
     setTypeFilter("all");
     renderMonthFilter();
     renderList();
+    renderInsights();
   }
 
   /* ---------- Rendering ---------- */
@@ -470,6 +471,18 @@
     renderSummary();
     renderMonthFilter();
     renderList();
+    renderInsights();
+  }
+
+  function renderInsights() {
+    Charts.renderMonthly($("#monthlyChart"), $("#monthStats"), state.transactions);
+    Charts.renderCategory(
+      $("#categoryChart"),
+      $("#categoryLegend"),
+      $("#categoryChartSub"),
+      state.transactions,
+      state.filters.month
+    );
   }
 
   /* ---------- Toasts ---------- */
@@ -538,6 +551,7 @@
     els.monthFilter.addEventListener("change", () => {
       state.filters.month = els.monthFilter.value;
       renderList();
+      renderInsights();
     });
     els.searchInput.addEventListener("input", () => {
       state.filters.search = els.searchInput.value.trim();
