@@ -10,6 +10,7 @@
     transactions: Storage.load(),
     editingId: null,
     pendingDeleteId: null,
+    filters: { type: "all", category: "all", month: "all", search: "" },
   };
 
   /* ---------- DOM references ---------- */
@@ -43,6 +44,12 @@
     emptyState: $("#emptyState"),
     emptyTitle: $("#emptyTitle"),
     emptyText: $("#emptyText"),
+
+    typeChips: document.querySelectorAll(".chip[data-type]"),
+    categoryFilter: $("#categoryFilter"),
+    monthFilter: $("#monthFilter"),
+    searchInput: $("#searchInput"),
+    clearFiltersBtn: $("#clearFiltersBtn"),
 
     modal: $("#confirmModal"),
     modalText: $("#modalText"),
@@ -262,10 +269,77 @@
     showToast("Transaction deleted", "info");
   }
 
-  /* ---------- Rendering ---------- */
+  /* ---------- Filters ---------- */
   function getVisibleTransactions() {
-    return sortByDateDesc(state.transactions);
+    const { type, category, month, search } = state.filters;
+    const query = search.toLowerCase();
+    return sortByDateDesc(
+      state.transactions.filter(
+        (t) =>
+          (type === "all" || t.type === type) &&
+          (category === "all" || t.category === category) &&
+          (month === "all" || Utils.monthKey(t.date) === month) &&
+          (!query ||
+            t.description.toLowerCase().includes(query) ||
+            t.category.toLowerCase().includes(query))
+      )
+    );
   }
+
+  /** Category options follow the selected type filter. */
+  function renderCategoryFilter() {
+    const { type } = state.filters;
+    const groups = type === "all" ? ["income", "expense"] : [type];
+    const option = (c) =>
+      `<option value="${Utils.escapeHTML(c.name)}">${c.icon}  ${Utils.escapeHTML(c.name)}</option>`;
+
+    let html = '<option value="all">All categories</option>';
+    groups.forEach((g) => {
+      const items = CATEGORIES[g].map(option).join("");
+      html += type === "all" ? `<optgroup label="${g === "income" ? "Income" : "Expense"}">${items}</optgroup>` : items;
+    });
+    els.categoryFilter.innerHTML = html;
+
+    const stillValid = groups.some((g) => CATEGORIES[g].some((c) => c.name === state.filters.category));
+    if (!stillValid) state.filters.category = "all";
+    els.categoryFilter.value = state.filters.category;
+  }
+
+  /** Month options are built from the months that have transactions. */
+  function renderMonthFilter() {
+    const months = [...new Set(state.transactions.map((t) => Utils.monthKey(t.date)))].sort().reverse();
+    els.monthFilter.innerHTML =
+      '<option value="all">All months</option>' +
+      months.map((m) => `<option value="${m}">${Utils.monthLabel(m)}</option>`).join("");
+
+    if (!months.includes(state.filters.month)) state.filters.month = "all";
+    els.monthFilter.value = state.filters.month;
+  }
+
+  function setTypeFilter(type) {
+    state.filters.type = type;
+    els.typeChips.forEach((chip) => {
+      const active = chip.dataset.type === type;
+      chip.classList.toggle("active", active);
+      chip.setAttribute("aria-selected", String(active));
+    });
+    renderCategoryFilter();
+  }
+
+  function hasActiveFilters() {
+    const f = state.filters;
+    return f.type !== "all" || f.category !== "all" || f.month !== "all" || f.search !== "";
+  }
+
+  function resetFilters() {
+    state.filters = { type: "all", category: "all", month: "all", search: "" };
+    els.searchInput.value = "";
+    setTypeFilter("all");
+    renderMonthFilter();
+    renderList();
+  }
+
+  /* ---------- Rendering ---------- */
 
   function renderSummary() {
     let income = 0;
@@ -360,6 +434,8 @@
         ? `${total} transaction${total === 1 ? "" : "s"}`
         : `Showing ${visible.length} of ${total}`
       : "No transactions yet";
+
+    els.clearFiltersBtn.classList.toggle("hidden", !hasActiveFilters());
   }
 
   function highlight(id) {
@@ -373,6 +449,7 @@
 
   function render() {
     renderSummary();
+    renderMonthFilter();
     renderList();
   }
 
@@ -421,6 +498,26 @@
       if (btn.dataset.action === "delete") requestDelete(id);
     });
 
+    els.typeChips.forEach((chip) =>
+      chip.addEventListener("click", () => {
+        setTypeFilter(chip.dataset.type);
+        renderList();
+      })
+    );
+    els.categoryFilter.addEventListener("change", () => {
+      state.filters.category = els.categoryFilter.value;
+      renderList();
+    });
+    els.monthFilter.addEventListener("change", () => {
+      state.filters.month = els.monthFilter.value;
+      renderList();
+    });
+    els.searchInput.addEventListener("input", () => {
+      state.filters.search = els.searchInput.value.trim();
+      renderList();
+    });
+    els.clearFiltersBtn.addEventListener("click", resetFilters);
+
     els.modalCancel.addEventListener("click", closeModal);
     els.modalConfirm.addEventListener("click", confirmDelete);
     els.modal.addEventListener("click", (event) => {
@@ -445,6 +542,7 @@
     populateCategorySelect(getSelectedType());
     els.date.value = Utils.todayISO();
     bindEvents();
+    renderCategoryFilter();
     render();
   }
 
