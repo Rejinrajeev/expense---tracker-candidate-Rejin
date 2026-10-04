@@ -1090,6 +1090,13 @@ main.container {
   text-overflow: ellipsis;
 }
 
+.trend-note {
+  grid-column: 1 / -1;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
 .stat.income strong { color: var(--income); }
 .stat.expense strong { color: var(--expense); }
 
