@@ -213,6 +213,8 @@
     }
     state.confirmedDuplicate = null;
 
+    const spentBefore = Budget.spentThisMonth(state.transactions);
+
     // Soft warning (not blocking): an expense larger than the available balance.
     const overspend =
       data.type === "expense" && Number(data.amount) > currentBalance(state.editingId) && state.transactions.length > 0;
@@ -248,6 +250,8 @@
     render();
     highlight(changedId);
     if (overspend) showToast("Heads up: this expense exceeds your available balance.", "error");
+    const alert = Budget.thresholdAlert(spentBefore, Budget.spentThisMonth(state.transactions));
+    if (alert) showToast(alert.text, alert.type);
   }
 
   function resetForm() {
@@ -533,6 +537,7 @@
 
   function render() {
     renderSummary();
+    Budget.render(state.transactions);
     renderMonthFilter();
     renderList();
     renderInsights();
@@ -580,6 +585,8 @@
       toast.appendChild(btn);
     }
 
+    // Keep the stack short so toasts never cover the page on small screens.
+    while (els.toasts.children.length >= 3) els.toasts.firstElementChild.remove();
     els.toasts.appendChild(toast);
     setTimeout(dismiss, action?.duration || 2800);
   }
@@ -682,6 +689,7 @@
     els.date.max = Utils.todayISO();
     els.date.min = Validator.MIN_DATE;
     bindEvents();
+    Budget.init({ getTransactions: () => state.transactions, notify: showToast });
     renderCategoryFilter();
     render();
   }
