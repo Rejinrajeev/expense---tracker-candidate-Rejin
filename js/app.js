@@ -314,18 +314,34 @@
   }
 
   /* ---------- Delete ---------- */
+  /** Generic confirmation dialog; `html` must already be escaped. */
+  function openConfirm({ icon, title, html, confirmLabel, onConfirm }) {
+    $("#modalIcon").textContent = icon;
+    $("#modalTitle").textContent = title;
+    els.modalText.innerHTML = html;
+    els.modalConfirm.textContent = confirmLabel;
+    state.onModalConfirm = onConfirm;
+    els.modal.classList.remove("hidden");
+    els.modalConfirm.focus();
+  }
+
   function requestDelete(id) {
     const tx = state.transactions.find((t) => t.id === id);
     if (!tx) return;
     state.pendingDeleteId = id;
-    els.modalText.innerHTML = `“<strong>${Utils.escapeHTML(tx.description)}</strong>” of ${Utils.formatCurrency(tx.amount)} will be permanently removed.`;
-    els.modal.classList.remove("hidden");
-    els.modalConfirm.focus();
+    openConfirm({
+      icon: "🗑️",
+      title: "Delete transaction?",
+      html: `“<strong>${Utils.escapeHTML(tx.description)}</strong>” of ${Utils.formatCurrency(tx.amount)} will be permanently removed.`,
+      confirmLabel: "Delete",
+      onConfirm: confirmDelete,
+    });
   }
 
   function closeModal() {
     els.modal.classList.add("hidden");
     state.pendingDeleteId = null;
+    state.onModalConfirm = null;
   }
 
   function confirmDelete() {
@@ -554,6 +570,118 @@
     );
   }
 
+  /* ---------- Export / import ---------- */
+  function bindDataMenu() {
+    const btn = $("#dataMenuBtn");
+    const menu = $("#dataMenu");
+    const fileInput = $("#importInput");
+
+    const setOpen = (open) => {
+      menu.classList.toggle("hidden", !open);
+      btn.setAttribute("aria-expanded", String(open));
+      if (open) menu.querySelector("button").focus();
+    };
+
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setOpen(menu.classList.contains("hidden"));
+    });
+    document.addEventListener("click", (e) => {
+      if (!menu.contains(e.target)) setOpen(false);
+    });
+    menu.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        btn.focus();
+      }
+    });
+
+    menu.addEventListener("click", (e) => {
+      const item = e.target.closest("[data-menu]");
+      if (!item) return;
+      setOpen(false);
+      const stamp = Utils.todayISO();
+
+      switch (item.dataset.menu) {
+        case "csv": {
+          const rows = getVisibleTransactions();
+          if (!rows.length) return showToast("Nothing to export. Add or show some transactions first.", "error");
+          DataIO.download(`spendwise-transactions-${stamp}.csv`, DataIO.toCSV(rows), "text/csv;charset=utf-8");
+          showToast(`Exported ${rows.length} transaction${rows.length === 1 ? "" : "s"} to CSV`, "success");
+          break;
+        }
+        case "backup":
+          if (!state.transactions.length) return showToast("Nothing to back up yet.", "error");
+          DataIO.download(
+            `spendwise-backup-${stamp}.json`,
+            DataIO.toBackup(state.transactions, Storage.getBudget()),
+            "application/json"
+          );
+          showToast("Backup downloaded", "success");
+          break;
+        case "import":
+          fileInput.value = "";
+          fileInput.click();
+          break;
+        case "clear":
+          if (!state.transactions.length) return showToast("There's no data to clear.", "info");
+          openConfirm({
+            icon: "🧹",
+            title: "Clear all data?",
+            html: `All <strong>${state.transactions.length}</strong> transactions and your budget will be deleted. Download a backup first if you may need them.`,
+            confirmLabel: "Clear all",
+            onConfirm: () => {
+              state.transactions = [];
+              Storage.setBudget(null);
+              persist();
+              resetForm();
+              closeModal();
+              resetFilters();
+              render();
+              showToast("All data cleared", "info");
+            },
+          });
+          break;
+      }
+    });
+
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+      const fileError = DataIO.checkFile(file);
+      if (fileError) return showToast(fileError, "error");
+
+      const reader = new FileReader();
+      reader.onerror = () => showToast("Couldn't read the file.", "error");
+      reader.onload = () => importBackup(String(reader.result));
+      reader.readAsText(file);
+    });
+  }
+
+  /** Merge a validated backup into current data, skipping duplicates. */
+  function importBackup(text) {
+    const result = DataIO.parseBackup(text);
+    if (result.error) return showToast(result.error, "error");
+
+    const ids = new Set(state.transactions.map((t) => t.id));
+    let added = 0;
+    let duplicates = 0;
+    result.transactions.forEach((t) => {
+      if (ids.has(t.id) || Validator.findDuplicate(t, state.transactions)) return duplicates++;
+      state.transactions.push(t);
+      ids.add(t.id);
+      added++;
+    });
+
+    if (result.budget && !Storage.getBudget()) Storage.setBudget(result.budget);
+    persist();
+    render();
+
+    const parts = [`Imported ${added} transaction${added === 1 ? "" : "s"}`];
+    if (duplicates) parts.push(`${duplicates} already existed`);
+    if (result.skipped) parts.push(`${result.skipped} invalid skipped`);
+    showToast(parts.join(" · "), added ? "success" : "info");
+  }
+
   /* ---------- Toasts ---------- */
   const TOAST_ICONS = { success: "✅", error: "⚠️", info: "ℹ️" };
 
@@ -664,7 +792,8 @@
     });
 
     els.modalCancel.addEventListener("click", closeModal);
-    els.modalConfirm.addEventListener("click", confirmDelete);
+    els.modalConfirm.addEventListener("click", () => state.onModalConfirm && state.onModalConfirm());
+    bindDataMenu();
     els.modal.addEventListener("click", (event) => {
       if (event.target === els.modal) closeModal();
     });

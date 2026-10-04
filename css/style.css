@@ -865,6 +865,69 @@ main.container {
   border-radius: 10px;
 }
 
+/* ---------- Data menu ---------- */
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-btn-sm {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  font-size: 16px;
+  color: var(--text-muted);
+}
+
+.menu {
+  position: relative;
+}
+
+.menu-list {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 15;
+  min-width: 250px;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  animation: pop 0.18s var(--ease);
+  transform-origin: top right;
+}
+
+.menu-list button {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  text-align: left;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.menu-list button:hover,
+.menu-list button:focus-visible {
+  outline: none;
+  background: var(--surface-2);
+}
+
+.menu-list button.danger {
+  color: var(--expense);
+}
+
+.menu-list hr {
+  margin: 6px 4px;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
 /* ---------- Filters ---------- */
 .filters {
   display: flex;
