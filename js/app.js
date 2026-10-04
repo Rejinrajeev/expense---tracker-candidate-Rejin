@@ -295,12 +295,26 @@
   function confirmDelete() {
     const id = state.pendingDeleteId;
     if (!id) return;
-    state.transactions = state.transactions.filter((t) => t.id !== id);
+    const index = state.transactions.findIndex((t) => t.id === id);
+    if (index === -1) return closeModal();
+    const [removed] = state.transactions.splice(index, 1);
     if (state.editingId === id) resetForm();
     persist();
     closeModal();
     render();
-    showToast("Transaction deleted", "info");
+
+    showToast("Transaction deleted", "info", {
+      label: "Undo",
+      duration: 6000,
+      onClick: () => {
+        if (state.transactions.some((t) => t.id === removed.id)) return;
+        state.transactions.splice(Math.min(index, state.transactions.length), 0, removed);
+        persist();
+        render();
+        highlight(removed.id);
+        showToast("Transaction restored", "success");
+      },
+    });
   }
 
   /* ---------- Filters ---------- */
@@ -506,17 +520,36 @@
   /* ---------- Toasts ---------- */
   const TOAST_ICONS = { success: "✅", error: "⚠️", info: "ℹ️" };
 
-  function showToast(message, type = "info") {
+  /**
+   * Show a toast. Pass `action` ({ label, onClick, duration }) to add a button,
+   * e.g. "Undo" after a delete.
+   */
+  function showToast(message, type = "info", action = null) {
     const toast = document.createElement("div");
     toast.className = `toast ${type}`;
     toast.setAttribute("role", type === "error" ? "alert" : "status");
-    toast.innerHTML = `<span aria-hidden="true">${TOAST_ICONS[type] || ""}</span><span>${Utils.escapeHTML(message)}</span>`;
-    els.toasts.appendChild(toast);
+    toast.innerHTML = `<span aria-hidden="true">${TOAST_ICONS[type] || ""}</span><span class="toast-msg">${Utils.escapeHTML(message)}</span>`;
 
-    setTimeout(() => {
+    const dismiss = () => {
+      if (toast.classList.contains("leaving")) return;
       toast.classList.add("leaving");
       toast.addEventListener("animationend", () => toast.remove(), { once: true });
-    }, 2800);
+    };
+
+    if (action) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "toast-action";
+      btn.textContent = action.label;
+      btn.addEventListener("click", () => {
+        action.onClick();
+        dismiss();
+      });
+      toast.appendChild(btn);
+    }
+
+    els.toasts.appendChild(toast);
+    setTimeout(dismiss, action?.duration || 2800);
   }
 
   /* ---------- Events ---------- */

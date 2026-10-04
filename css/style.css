@@ -1322,6 +1322,25 @@ main.container {
 .toast.error { border-left-color: var(--expense); }
 .toast.info { border-left-color: var(--primary); }
 
+.toast-msg {
+  flex: 1;
+}
+
+.toast-action {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--primary-soft);
+  transition: background-color 0.2s;
+}
+
+.toast-action:hover {
+  background: color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
 .toast.leaving {
   animation: slideOut 0.3s ease forwards;
 }
