@@ -4,3 +4,11 @@ Thumbs.db
 .idea/
 node_modules/
 *.log
+
+# Environment files hold MongoDB credentials — never commit them.
+.env
+.env.local
+server/.env
+
+# Vite build output
+client/dist/

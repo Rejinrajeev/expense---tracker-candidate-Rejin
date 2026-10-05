@@ -1,114 +1,188 @@
-# SpendWise — Expense Tracker
+# SpendWise — Expense Tracker (MERN)
 
-A clean, responsive expense tracker web app built with plain **HTML, CSS and JavaScript**. You don't need any frameworks, build tools or installs.
+A full-stack expense tracker built with **MongoDB, Express, React and Node**. Transactions are stored in MongoDB through a REST API, and the React front end is organised so that all business rules live in one shared, unit-tested layer used by both sides.
+
+> **Built with AI assistance.** See [docs/AI-DISCLOSURE.md](docs/AI-DISCLOSURE.md).
 
 ![Desktop screenshot](docs/screenshots/desktop-light.png)
+
+---
+
+## Quick Start
+
+You need **Node.js 18+** and **MongoDB** (either a local `mongod` or a free MongoDB Atlas cluster).
+
+```bash
+# 1. Clone
+git clone https://github.com/Rejinrajeev/expense---tracker-candidate-Rejin.git
+cd expense---tracker-candidate-Rejin
+
+# 2. Install both halves
+npm run install:all
+
+# 3. Configure the database
+cp server/.env.example server/.env
+#    The default points at mongodb://127.0.0.1:27017/spendwise
+#    For Atlas, paste your connection string into server/.env instead.
+```
+
+Then start the two processes **in separate terminals**:
+
+```bash
+# Terminal 1 — the API on port 5000
+npm run dev:server
+
+# Terminal 2 — the React app on port 5173
+npm run dev:client
+```
+
+Open **<http://localhost:5173>**.
+
+The Vite dev server proxies `/api` to port 5000, so there is no CORS setup and no URL to configure in the front end.
+
+### No MongoDB installed?
+
+Use MongoDB Atlas — it is free and needs no local install:
+
+1. Create a cluster at <https://www.mongodb.com/cloud/atlas/register>
+2. **Database Access** → add a user; **Network Access** → allow your IP
+3. **Connect** → *Drivers* → copy the connection string
+4. Paste it into `server/.env` as `MONGODB_URI`, replacing `<password>` and keeping `/spendwise` as the database name
+
+The server prints clear instructions and exits if it cannot connect, so you will not be left guessing.
+
+---
+
+## Running the Tests
+
+```bash
+npm test
+```
+
+Node's built-in test runner, **no dependencies and no database required** — the tests cover `shared/`, the domain layer that both the server and the client import.
+
+| File | Covers |
+| --- | --- |
+| `tests/validation.test.js` | Every field rule, plus duplicate detection |
+| `tests/transaction-store.test.js` | Filtering, sorting, totals, filter reconciliation |
+| `tests/budget-model.test.js` | Spend totals, thresholds, snapshots, alerts |
+| `tests/insights-model.test.js` | Month windows, bar scaling, category shares |
+| `tests/serializer.test.js` | CSV quoting, formula injection, backup round trip |
+| `tests/storage.test.js` | The backup import plan (`planImport`) |
+| `tests/utils.test.js` | Currency, dates, rounding, escaping |
+
+---
 
 ## Features
 
 ### Core
-- **Add transactions**: income or expense, with amount, category, date and description
-- **Edit and delete** transactions (deleting asks you to confirm first)
+- **Add transactions** — income or expense, with amount, category, date and description
+- **Edit and delete**, with a confirmation dialog and an **Undo** button after deleting
 - **Summary cards** for total income, total expenses and current balance, with your savings rate
-- **Filters** by type (All / Income / Expense), category and month, plus a text search
-- **Saved in Local Storage**: your data is still there after you refresh the page
-- **Responsive design** that works on desktop, tablet and mobile
+- **Filters** by type, category and month, plus a text search, all combinable
+- **Sorting** by newest, oldest, highest or lowest amount
+- **Persisted in MongoDB** through the REST API
+- **Responsive** across desktop, tablet and mobile
 
 ### Bonus
-- **Monthly summary**: a 6-month income vs. expense bar chart, plus this month's income, expenses, net savings and the change in spending since last month
-- **Category-wise chart**: a donut chart of expenses by category. It follows the month filter.
-- **Validation with helpful messages**: each field gets its own error message, checked when you submit and when you leave the field
-  - Amount is required, must be greater than 0, can be at most ₹1 crore and can have at most 2 decimal places
-  - Category must match the selected type
-  - Date is required and can't be in the future
-  - Description must be 3–60 characters
-  - You get a warning when an expense is larger than your available balance
-  - **Duplicate detection**: you get a warning when an identical transaction already exists, and you submit again to confirm
-  - **Live re-checking**: once a field shows an error, it is re-checked as you type
-  - **Amount preview**: the amount is shown in currency format as you type (e.g. ₹1,25,000.00), with a reminder to double-check amounts over ₹1 lakh
-  - **Budget validation**: the budget must be a positive number of at most ₹1 crore
-  - **Import validation**: the file type and size are checked, every imported transaction is validated with the same rules as the form, and invalid or duplicate entries are skipped and counted
+- **Monthly summary** — a 6-month income vs. expense bar chart, with this month's totals, net savings and the change in spending since last month
+- **Category chart** — a donut chart of expenses by category that follows the month filter
+- **Validation with helpful messages** on every field, enforced **twice**: once in the React form for instant feedback, and again in Express before anything reaches MongoDB, using the same functions
 
-### Extra features
-- 🎯 **Monthly budget**: set a spending limit for the month. The progress bar turns amber at 80% and red when you go over. It also shows how much is left, the days remaining and a suggested daily limit, and you get an alert when a new expense crosses 80% or 100%.
-- 📤 **Export and import**:
-  - Export the visible transactions as **CSV**, which opens in Excel or Google Sheets
-  - Download a full **JSON backup**, and **restore** from one later
-  - Clear all data, after a confirmation
-- ↩️ **Undo delete**: the notification shown after a delete has an *Undo* button
-- ↕️ **Sorting**: newest first, oldest first, highest amount or lowest amount
-- 🌙 Light and dark theme (your choice is remembered)
-- Transactions grouped by day ("Today", "Yesterday", …)
-- Toast notifications, smooth animations and keyboard support (`Esc` closes dialogs and cancels editing)
-- Accessible labels, focus styles and `prefers-reduced-motion` support
+### Extra
+- 🎯 **Monthly budget** — a spending limit with a progress bar that turns amber at 80% and red when exceeded, showing what is left, days remaining and a suggested daily allowance
+- 📤 **Export and import** — CSV of the visible rows, full JSON backup, restore from a backup, and clear-all
+- 🔁 **Duplicate detection** — submitting an identical transaction warns first and goes through on a second submit
+- 🌙 Light and dark theme, remembered per browser
+- ⌨️ Keyboard support — `Esc` closes dialogs and cancels editing
+- ♿ Accessible labels, focus styles and `prefers-reduced-motion` support
 
-## How to Run
-
-**Option 1: open the file directly**
-
-1. Clone or download this repository
-   ```bash
-   git clone https://github.com/Rejinrajeev/expense---tracker-candidate-Rejin.git
-   cd expense---tracker-candidate-Rejin
-   ```
-2. Open `index.html` in any modern browser (Chrome, Edge, Firefox or Safari).
-
-**Option 2: run a local server (optional)**
-
-```bash
-# Python 3
-python -m http.server 8000
-# or Node.js
-npx serve .
-```
-Then go to <http://localhost:8000>.
+---
 
 ## Project Structure
 
 ```
-├── index.html          # Page markup
-├── css/
-│   └── style.css       # Styles, theme tokens, responsive layout
-├── js/
-│   ├── utils.js        # Formatting helpers & category definitions
-│   ├── storage.js      # Local Storage read/write
-│   ├── validation.js   # Form validation rules & messages
-│   ├── charts.js       # Monthly bar chart & category donut (SVG)
-│   ├── budget.js       # Monthly budget tracking & alerts
-│   ├── data-io.js      # CSV/JSON export, validated backup import
-│   └── app.js          # App state, rendering, events
-├── assets/favicon.svg
-└── docs/screenshots/
+├── shared/                      Domain layer — imported by BOTH sides
+│   ├── validation.js            Field rules and their messages
+│   ├── insights.js              Chart aggregation and budget maths
+│   ├── filters.js               Filtering and sorting
+│   ├── merge.js                 Backup import planning
+│   ├── serializer.js            CSV / JSON in and out
+│   ├── categories.js            Category catalogue
+│   └── utils.js                 Currency, dates, rounding
+│
+├── server/                      Express + MongoDB API
+│   └── src/
+│       ├── server.js            Entry point
+│       ├── config/db.js         Mongoose connection
+│       ├── models/              Mongoose schemas
+│       │   ├── transaction.model.js
+│       │   └── budget.model.js
+│       ├── controllers/         Request handling
+│       │   ├── transaction.controller.js
+│       │   └── budget.controller.js
+│       ├── routes/index.js      The API surface
+│       └── middleware/
+│           └── error-handler.js
+│
+├── client/                      React (Vite)
+│   └── src/
+│       ├── main.jsx             Entry point
+│       ├── App.jsx              Layout and view state
+│       ├── api/client.js        The only place that calls fetch
+│       ├── hooks/
+│       │   ├── useTransactions.js   Data and all API writes
+│       │   ├── useToasts.js
+│       │   └── useTheme.js
+│       ├── components/          SummaryCards, BudgetCard, TransactionForm,
+│       │                        TransactionList, Filters, Insights,
+│       │                        DataMenu, ConfirmModal, Toasts, AppHeader
+│       ├── lib/download.js      Blob downloads and FileReader
+│       └── styles/app.css
+│
+├── tests/                       Unit tests for shared/ (node --test)
+└── docs/
+    ├── ARCHITECTURE.md          How the layers fit together
+    ├── AI-DISCLOSURE.md         How this project was built
+    └── screenshots/
 ```
 
-## Screenshots
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) explains the layering and walks a
+request from a React click through Express into MongoDB and back.
 
-| Dark mode | Mobile |
-|-----------|--------|
-| ![Dark mode](docs/screenshots/desktop-dark.png) | ![Mobile](docs/screenshots/mobile.png) |
+---
 
-## Development Workflow
+## API
 
-Each feature was built on its own branch and merged into the main development branch with `--no-ff`, so the history shows each step:
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/transactions` | All transactions, newest first, with totals |
+| `POST` | `/api/transactions` | Create one |
+| `PUT` | `/api/transactions/:id` | Update one |
+| `DELETE` | `/api/transactions/:id` | Delete one (returns it, so Undo works) |
+| `POST` | `/api/transactions/restore` | Re-create one after an Undo |
+| `POST` | `/api/transactions/import` | Merge a backup, skipping duplicates |
+| `DELETE` | `/api/transactions` | Clear everything |
+| `GET` | `/api/budget` | The current monthly limit |
+| `PUT` | `/api/budget` | Set the limit |
+| `DELETE` | `/api/budget` | Remove the limit |
+| `GET` | `/api/categories` | The category catalogue |
+| `GET` | `/api/health` | Liveness check |
 
-| Branch | What it adds |
-|--------|--------------|
-| `feature/ui-layout` | Page structure and responsive theme |
-| `feature/transactions` | Add / edit / delete, totals, Local Storage |
-| `feature/filters` | Filter by type, category, month and search |
-| `feature/validation` | Form validation and error messages |
-| `feature/insights-charts` | Monthly summary and category chart |
-| `fix/mobile-layout` | Small-screen layout fixes |
-| `docs/readme` | Documentation and screenshots |
-| `feature/sorting` | Sort by date or amount |
-| `feature/undo-delete` | Undo after deleting |
-| `feature/smart-validation` | Duplicate detection, live re-checking, amount preview |
-| `feature/monthly-budget` | Monthly budget with alerts |
-| `feature/export-import` | CSV export, JSON backup and restore, clear all |
-| `docs/new-features` | README update for the new features |
+A rejected write returns `400` with per-field messages, which the React form
+displays inline:
 
-Commit messages follow the [Conventional Commits](https://www.conventionalcommits.org/) style (`feat:`, `fix:`, `style:`, `docs:`).
+```json
+{
+  "message": "Please fix the highlighted fields.",
+  "errors": { "amount": "Amount must be greater than zero." }
+}
+```
+
+---
 
 ## Tech
 
-HTML5 · CSS3 (Grid, Flexbox, custom properties) · Vanilla JavaScript (ES6+) · Local Storage API · inline SVG charts
+**MongoDB** · **Express 4** · **React 18** · **Node 18+** · Mongoose · Vite · inline SVG charts · `node --test`
+
+No charting library, no UI framework, no state-management library.
